@@ -1,0 +1,12 @@
+project_id              = "my-gcp-payment-prod-12345"
+region                  = "us-central1"
+environment             = "prod"
+app_name                = "payment-app"
+gke_node_pool_min_count = 2
+gke_node_pool_max_count = 6
+gke_machine_type        = "e2-standard-4"
+db_tier                 = "db-custom-4-16384"
+db_name                 = "paymentdb"
+db_username             = "payment_prod_user"
+helm_chart_version      = "1.0.0"
+domain_name             = "payment.prod.company.com"

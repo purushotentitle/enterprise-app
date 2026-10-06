@@ -1,0 +1,19 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "payment-app.fullname" . }}
+  namespace: {{ .Values.serviceMonitor.namespace | default "monitoring" }}
+  labels:
+    {{- include "payment-app.labels" . | nindent 4 }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      {{- include "payment-app.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: actuator
+      path: {{ .Values.serviceMonitor.path | default "/actuator/prometheus" }}
+      interval: {{ .Values.serviceMonitor.interval | default "15s" }}
+      scrapeTimeout: 10s
+{{- end }}

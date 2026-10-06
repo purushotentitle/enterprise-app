@@ -1,0 +1,46 @@
+# Production High-Availability Environment Overrides
+environment: "prod"
+
+replicaCount: 4
+
+resources:
+  requests:
+    cpu: 1000m
+    memory: 1024Mi
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 16
+  targetCPUUtilizationPercentage: 65
+  targetMemoryUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 3
+
+# Hard Pod Anti-Affinity across availability zones
+podAntiAffinity:
+  enabled: true
+  type: required # Strict guarantee that no two pods run on the same node
+  topologyKey: "kubernetes.io/hostname"
+
+topologySpreadConstraints:
+  enabled: true
+  maxSkew: 1
+  topologyKey: "topology.kubernetes.io/zone"
+  whenUnsatisfiable: "DoNotSchedule" # Strict multi-AZ distribution
+
+backendConfig:
+  enabled: true
+  cloudArmorPolicy: "prod-payment-app-waf-policy"
+  timeoutSec: 30
+  connectionDraining:
+    drainingTimeoutSec: 60
+
+serviceMonitor:
+  enabled: true
+  interval: "10s"

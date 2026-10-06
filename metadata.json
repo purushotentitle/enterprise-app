@@ -1,0 +1,6 @@
+{
+  "name": "Payment App - GCP GKE Production Terraform & Helm",
+  "description": "Production-grade payment processing platform deployment on Google Cloud Platform GKE with high-availability Terraform infrastructure, Helm charts, and DevOps console.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,88 @@
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME    = 'payment-service'
+        VERSION     = '1.0.0'
+        IMAGE_NAME  = "purushotentitle/${APP_NAME}:${VERSION}-${BUILD_NUMBER}"
+        JAVA_HOME   = tool 'JDK-17'
+    }
+
+    tools {
+        maven 'Maven-3.9'
+        jdk   'JDK-17'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo '── Checking out source code ──'
+                checkout scm
+            }
+        }
+
+        stage('Build JAR') {
+            steps {
+                echo '── Building JAR with Maven ──'
+                sh 'mvn clean package -DskipTests -q'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+
+        stage('Unit & Integration Tests') {
+            steps {
+                echo '── Running tests ──'
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "── Building Docker image: ${IMAGE_NAME} ──"
+                sh "docker build -t ${IMAGE_NAME} ."
+            }
+        }
+
+        stage('Push to Registry') {
+            steps {
+                echo '── Pushing image to registry ──'
+                withCredentials([usernamePassword(
+                        credentialsId: 'docker-registry-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin docker.io'
+                    sh "docker push ${IMAGE_NAME}"
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo '── Deploying to Kubernetes ──'
+                sh """
+                    sed -i 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g' k8s/deployment.yaml
+                    kubectl apply -f k8s/
+                    kubectl rollout status deployment/${APP_NAME} --timeout=120s
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline succeeded — ${APP_NAME}:${VERSION} deployed"
+        }
+        failure {
+            echo "❌ Pipeline failed — check logs above"
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
